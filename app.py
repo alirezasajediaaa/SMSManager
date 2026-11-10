@@ -1,1 +1,51 @@
+import os
+import secrets
+import requests
+from flask import Flask, request, jsonify
 
+app = Flask(__name__)
+
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
+APP_KEY = os.environ.get("APP_KEY")
+
+
+@app.route("/")
+def home():
+    return "SMS Server is running!"
+
+
+@app.route("/send", methods=["POST"])
+def send_message():
+
+    if not APP_KEY or not secrets.compare_digest(
+        request.headers.get("X-App-Key", ""),
+        APP_KEY
+    ):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    message = data.get("text", "").strip()
+
+    if message != "سلام":
+        return jsonify({"error": "Message not allowed"}), 400
+
+    if not BOT_TOKEN or not CHAT_ID:
+        return jsonify({"error": "Bot settings missing"}), 500
+
+    url = f"https://botapi.rubika.ir/v3/{BOT_TOKEN}/sendMessage"
+
+    try:
+        response = requests.post(
+            url,
+            json={
+                "chat_id": CHAT_ID,
+                "text": message
+            },
+            timeout=20
+        )
+
+        return jsonify(response.json()), response.status_code
+
+    except Exception:
+        return jsonify({"error": "Connection failed"}), 500
