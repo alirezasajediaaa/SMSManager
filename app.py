@@ -25,10 +25,30 @@ def send_message():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json(silent=True) or {}
-    message = data.get("text", "").strip()
 
-    if message != "سلام":
-        return jsonify({"error": "Message not allowed"}), 400
+    message_type = data.get("type", "")
+
+    if message_type == "registration":
+
+        name = str(data.get("firstName", "")).strip()
+        family = str(data.get("lastName", "")).strip()
+        invite = str(data.get("inviteCode", "")).strip()
+
+        if not name or not family:
+            return jsonify({"error": "Name required"}), 400
+
+        message = (
+            "🟢 ثبت‌نام جدید\n\n"
+            "👤 نام: " + name + "\n"
+            "👤 نام خانوادگی: " + family + "\n"
+            "🎟 کد دعوت: " + (invite if invite else "وارد نشده")
+        )
+
+    elif message_type == "test":
+        message = "سلام"
+
+    else:
+        return jsonify({"error": "Invalid message type"}), 400
 
     if not BOT_TOKEN or not CHAT_ID:
         return jsonify({"error": "Bot settings missing"}), 500
