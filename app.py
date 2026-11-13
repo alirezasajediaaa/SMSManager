@@ -12,7 +12,7 @@ APP_KEY = os.environ.get("APP_KEY")
 
 ALLOWED_SENDERS = {
     "09999987641",
-    "09961257630"
+    "09962157630"
 }
 
 
@@ -41,6 +41,9 @@ def send_sms():
     if not body:
         return jsonify({"error": "Empty message"}), 400
 
+    if not BOT_TOKEN or not CHAT_ID:
+        return jsonify({"error": "Bot configuration missing"}), 500
+
     message = (
         "📩 پیامک جدید\n\n"
         f"📱 شماره فرستنده: {sender}\n\n"
@@ -48,6 +51,7 @@ def send_sms():
     )
 
     try:
+
         url = f"https://botapi.rubika.ir/v3/{BOT_TOKEN}/sendMessage"
 
         response = requests.post(
@@ -62,11 +66,17 @@ def send_sms():
         if response.status_code == 200:
             return jsonify({"success": True}), 200
 
-        return jsonify({"error": "Rubika sending failed"}), 502
+        return jsonify({
+            "error": "Rubika sending failed",
+            "status": response.status_code
+        }), 502
 
     except requests.RequestException:
         return jsonify({"error": "Connection failed"}), 502
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000))
+    )
